@@ -1,0 +1,13 @@
+How to run:
+
+1. Open this folder in VS Code.
+2. Run:
+   npm install
+   npm start
+
+The terminal will now show:
+
+✅ AI Natives backend is running
+🌐 Open this link: http://localhost:3000
+
+If VS Code does not make it blue/clickable, copy and paste the link into Chrome/Edge.
