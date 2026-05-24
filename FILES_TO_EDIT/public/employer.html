@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Natives — Employer Dashboard</title>
+  <link rel="stylesheet" href="employer-styles.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    .calendar-grid .cal-dow{font-weight:700;color:#6b7280;padding:6px 0}
+    .calendar-grid .cal-day{padding:10px 0;border-radius:8px;cursor:pointer;background:#f7f7f5;font-weight:600}
+    .calendar-grid .cal-day.empty{background:transparent;cursor:default}
+    .calendar-grid .cal-day.today{background:#22c55e;color:#fff}
+    .calendar-grid .cal-day:hover:not(.empty):not(.today){background:#dcfce7}
+    .pdfm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+    .pdfm-overlay.open{display:flex}
+    .pdfm-dialog{background:#fff;width:min(900px,100%);max-height:92vh;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+    .pdfm-head{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e8eae7}
+    .pdfm-title{font-weight:700;font-size:16px}
+    .pdfm-actions{display:flex;gap:8px}
+    .pdfm-btn{padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;border:1px solid #d1d5db;background:#fff;font-size:13px}
+    .pdfm-btn.primary{background:#22c55e;color:#fff;border-color:#22c55e}
+    .pdfm-body{padding:24px;overflow:auto;background:#f6f7f5}
+    .pdfm-page{background:#fff;padding:32px;max-width:780px;margin:0 auto;font-family:system-ui,sans-serif;color:#1a1f18;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+    .pdfm-page h1{font-size:22px;margin:0 0 4px}
+    .pdfm-page h2{font-size:15px;margin:18px 0 8px;color:#22c55e;border-bottom:1px solid #eee;padding-bottom:4px}
+    .pdfm-meta{font-size:12px;color:#6b7280;margin-bottom:14px}
+    .pdfm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 14px}
+    .pdfm-tile{border:1px solid #eee;border-radius:8px;padding:8px}
+    .pdfm-tile-l{font-size:10px;color:#6b7280;text-transform:uppercase}
+    .pdfm-tile-v{font-size:18px;font-weight:700}
+    .pdfm-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+    .pdfm-table th,.pdfm-table td{border:1px solid #eee;padding:6px 8px;text-align:left}
+    .pdfm-table th{background:#f4f5f3;font-weight:700}
+    .pdfm-chart-wrap{height:240px;margin:8px 0 16px}
+  </style>
+
+<script>
+(function() {
+  try {
+    var session = JSON.parse(localStorage.getItem('aiNativesLoggedIn') || 'null');
+    if (!session || session.role !== 'employer') {
+      alert('Please register and login as Employer Dashboard first.');
+      window.location.href = 'index.html';
+    }
+  } catch(e) {
+    window.location.href = 'index.html';
+  }
+})();
+function aiNativesLogout() {
+  localStorage.removeItem('aiNativesLoggedIn');
+  window.location.href = 'index.html';
+}
+</script>
+
+
+
+<style id="sidebar-drag-css">
+/* Default collapsed (icons only). Drag the handle to the right to expand. */
+aside.sidebar{position:relative;transition:width .18s ease, padding .18s ease}
+body.sidebar-collapsed aside.sidebar{width:76px!important;padding:16px 8px!important}
+body.sidebar-collapsed .sidebar-name,body.sidebar-collapsed .sidebar-sub,body.sidebar-collapsed .nav-label,body.sidebar-collapsed .nav-sub,body.sidebar-collapsed .nav-dot,body.sidebar-collapsed .sb-title,body.sidebar-collapsed .sb-sub,body.sidebar-collapsed .sb-item-label,body.sidebar-collapsed .sb-item-sub,body.sidebar-collapsed .sb-dot,body.sidebar-collapsed .sb-user-name,body.sidebar-collapsed .sb-user-role,body.sidebar-collapsed .sidebar-user > div:not(.user-avatar){display:none!important}
+body.sidebar-collapsed .sidebar-logo,body.sidebar-collapsed .sb-brand{justify-content:center;text-align:center}
+body.sidebar-collapsed .nav-btn,body.sidebar-collapsed .sb-item{justify-content:center;padding:12px 0!important;gap:0!important}
+body.sidebar-collapsed .nav-btn > div,body.sidebar-collapsed .sb-item > div{display:none}
+body.sidebar-collapsed .sidebar-user,body.sidebar-collapsed .sb-footer{justify-content:center}
+/* Hide brand text & shrink logo when collapsed */
+body.sidebar-collapsed .app-name,body.sidebar-collapsed .app-sub,body.sidebar-collapsed .sidebar-name,body.sidebar-collapsed .sidebar-sub{display:none!important}
+body.sidebar-collapsed .ai-logo-mark,body.sidebar-collapsed .sidebar-bolt{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important;margin:0 auto!important}
+body.sidebar-collapsed .ai-logo-text{font-size:16px!important}
+body.sidebar-collapsed .ai-logo-star{font-size:10px!important;right:4px!important;top:3px!important}
+/* Sidebar user chip below logout */
+.nav-user-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-top:6px;border-top:1px solid #e8eae7;cursor:pointer}
+.nav-user-chip .nuc-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+.nav-user-chip .nuc-meta{line-height:1.15}
+.nav-user-chip .nuc-meta .n{font-weight:700;font-size:13px;color:#0f172a}
+body.sidebar-collapsed .nav-user-chip{justify-content:center;padding:10px 0}
+body.sidebar-collapsed .nav-user-chip .nuc-meta{display:none}
+.sb-drag-handle{position:absolute;top:0;right:-6px;width:12px;height:100%;cursor:ew-resize;z-index:50;display:flex;align-items:center;justify-content:center}
+.sb-drag-handle::before{content:"";width:4px;height:46px;border-radius:4px;background:#cbd5e1;opacity:.55;transition:opacity .15s,background .15s}
+.sb-drag-handle:hover::before{opacity:1;background:#22c55e}
+/* hide any old burger toggle button that earlier templates injected */
+.sb-collapse-toggle{display:none!important}
+/* Logout nav button styling */
+.nav-btn.logout-nav, .sb-item.logout-nav{color:#dc2626}
+.nav-btn.logout-nav svg, .sb-item.logout-nav svg{color:#dc2626}
+</style>
+<script>
+(function(){
+  function init(){
+    var sidebar = document.querySelector('aside.sidebar');
+    if(!sidebar) return;
+    // default = collapsed unless user previously expanded
+    if(localStorage.getItem('sidebarCollapsed') !== '0'){
+      document.body.classList.add('sidebar-collapsed');
+    }
+    // remove any pre-existing burger toggle
+    var oldBtn = sidebar.querySelector('.sb-collapse-toggle');
+    if(oldBtn) oldBtn.remove();
+    // add drag handle
+    var h = document.createElement('div');
+    h.className = 'sb-drag-handle';
+    h.title = 'Drag to expand / collapse';
+    sidebar.appendChild(h);
+    var startX = 0, startCollapsed = false, dragging = false;
+    h.addEventListener('mousedown', function(e){
+      dragging = true; startX = e.clientX;
+      startCollapsed = document.body.classList.contains('sidebar-collapsed');
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      var dx = e.clientX - startX;
+      if(startCollapsed && dx > 30){
+        document.body.classList.remove('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed','0');
+        startCollapsed = false; startX = e.clientX;
+      } else if(!startCollapsed && dx < -30){
+        document.body.classList.add('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed','1');
+        startCollapsed = true; startX = e.clientX;
+      }
+    });
+    window.addEventListener('mouseup', function(){ dragging = false; });
+    // also allow click on handle to toggle
+    h.addEventListener('click', function(){
+      var c = document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', c ? '1' : '0');
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+
+
+<style>
+/* Reports: neutral palette, no orange */
+#page-reports .card{background:#fff!important;border:1px solid #e8eae7!important}
+#page-reports .section-title{color:#0f172a!important}
+#page-reports .btn-primary,#page-reports .rep-label{color:inherit}
+#page-reports .btn-primary{background:linear-gradient(135deg,#22c55e,#16a34a)!important;border-color:#16a34a!important;color:#fff!important}
+.pdfm-page h2{color:#16a34a !important}
+.pdfm-btn.primary{background:#16a34a !important;border-color:#16a34a !important}
+</style>
+
+
+<style>
+#page-analytics .tab-bar{background:#fff!important;border:1px solid #e8eae7;border-radius:10px;padding:4px}
+#page-analytics .tab-bar .tab-btn{background:#fff!important;border:none;color:#374151}
+#page-analytics .tab-bar .tab-btn.active{background:#dcfce7!important;color:#15803d}
+</style>
+
+<style>
+/* Employer: horizontal settings tabs */
+#page-settings .settings-layout{display:flex;flex-direction:column;gap:14px}
+#page-settings .settings-nav{width:100%;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;background:#fff;padding:8px;border-radius:12px;border:1px solid #e8eae7}
+#page-settings .settings-nav-btn{display:inline-flex;align-items:center;gap:8px;border:none;background:none;font-size:13px;cursor:pointer;border-radius:8px;padding:8px 14px;white-space:nowrap}
+#page-settings .settings-nav-btn.active{background:rgba(34,197,94,.12);color:#16a34a;font-weight:700}
+#page-settings .settings-panel{flex:1}
+/* AI brand logo (same look as user side) */
+.ai-logo-mark{width:48px;height:48px;border-radius:14px;background:linear-gradient(145deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;color:#fff;position:relative;box-shadow:0 10px 22px rgba(34,197,94,.28);margin:0 auto 10px}
+.ai-logo-text{font-size:22px;font-weight:900;letter-spacing:-1.5px;font-style:italic;line-height:1}
+.ai-logo-star{position:absolute;right:6px;top:4px;font-size:12px;color:#fff}
+.sidebar-logo{display:flex;flex-direction:column;align-items:center;text-align:center}
+</style>
+  <script src="auth-guard.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="ai-logo-mark" aria-hidden="true">
+        <span class="ai-logo-text">AI</span>
+        <span class="ai-logo-star">✦</span>
+      </div>
+      <div class="app-name">AI Natives</div>
+    </div>
+
+    <nav id="main-nav">
+      <button class="nav-btn active" data-page="dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <div><div class="nav-label">Dashboard</div><div class="nav-sub">Overview &amp; monitoring</div></div>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-btn" data-page="analytics">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <div><div class="nav-label">Analytics</div><div class="nav-sub">Advanced analytics</div></div>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-btn" data-page="post-jobs">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        <div><div class="nav-label">Post Jobs</div><div class="nav-sub">Create &amp; manage vacancies</div></div>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-btn" data-page="applicants">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div><div class="nav-label">Applicants</div><div class="nav-sub">Applications from users</div></div>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-btn" data-page="reports">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <div><div class="nav-label">Reports</div></div>
+        <span class="nav-dot"></span>
+      </button>
+<button class="nav-btn" data-page="settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div><div class="nav-label">Settings &amp; Profile</div></div>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-btn logout-nav" onclick="aiNativesLogout()" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <div><div class="nav-label">Log out</div></div>
+      </button>
+      <div class="nav-user-chip" onclick="showPage('settings')">
+        <div class="nuc-av">LG</div>
+        <div class="nuc-meta"><div class="n">Liam Gallagher</div></div>
+      </div>
+    </nav>
+
+  </aside>
+
+  <!-- ═══════════ MAIN CONTENT ═══════════ -->
+  <main class="main-content">
+    <header class="emp-topbar" style="display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid #e8eae7;border-radius:12px;padding:10px 16px;margin-bottom:16px">
+      <nav class="breadcrumb-bar" aria-label="Breadcrumb" style="border:0;padding:0;margin:0;background:transparent">
+        <a href="#" class="breadcrumb-link" onclick="event.preventDefault();showPage('dashboard');">Home</a>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current" id="breadcrumb-current">Dashboard</span>
+      </nav>
+    </header>
+    <style>
+      .breadcrumb-bar{display:flex;align-items:center;gap:8px;font-size:13px;color:#6b7280;background:#fff;border:1px solid #e8eae7;border-radius:10px;padding:10px 16px;margin-bottom:20px}
+      .breadcrumb-link{color:#16a34a;text-decoration:none;font-weight:600}
+      .breadcrumb-link:hover{text-decoration:underline}
+      .breadcrumb-sep{color:#6b7280}
+      .breadcrumb-current{color:#1a1f18;font-weight:600}
+    </style>
+
+    <!-- ══════ DASHBOARD ══════ -->
+    <section class="page active" id="page-dashboard">
+      <div class="flex items-start justify-between mb-6">
+        <div>
+          <div class="page-title">Hello, Liam Gallagher! </div>
+          <div class="page-sub">What are you looking for today?</div>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="emp-stat-row" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:20px">
+        <div class="kpi-card" style="padding:14px"><div class="kpi-top"><span class="kpi-label" style="font-size:10px">APPLIED</span><span class="material-icons" style="font-size:14px">send</span></div><div class="kpi-value" style="font-size:22px">0</div><div class="kpi-sub" style="font-size:11px">Total applications</div></div>
+        <div class="kpi-card" style="padding:14px"><div class="kpi-top"><span class="kpi-label" style="font-size:10px">IN REVIEW</span><span class="material-icons" style="font-size:14px;color:#3b82f6">hourglass_top</span></div><div class="kpi-value" style="font-size:22px">0</div><div class="kpi-sub" style="font-size:11px">Awaiting employer</div></div>
+        <div class="kpi-card" style="padding:14px"><div class="kpi-top"><span class="kpi-label" style="font-size:10px">INTERVIEWS</span><span class="material-icons" style="font-size:14px;color:#f59e0b">event</span></div><div class="kpi-value" style="font-size:22px">0</div><div class="kpi-sub" style="font-size:11px">Scheduled</div></div>
+        <div class="kpi-card" style="padding:14px"><div class="kpi-top"><span class="kpi-label" style="font-size:10px">OFFERS</span><span class="material-icons" style="font-size:14px">workspace_premium</span></div><div class="kpi-value" style="font-size:22px">0</div><div class="kpi-sub" style="font-size:11px">Received</div></div>
+        <div class="kpi-card" style="padding:14px"><div class="kpi-top"><span class="kpi-label" style="font-size:10px">REJECTIONS</span><span class="material-icons" style="font-size:14px;color:#ef4444">cancel</span></div><div class="kpi-value" style="font-size:22px">0</div><div class="kpi-sub" style="font-size:11px">Closed roles</div></div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="dash-emp-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+        <!-- Donut -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-1">
+            <div class="section-title">Users Analytics</div>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="showPage('analytics')">Open Analytics →</button>
+          </div>
+          <div class="section-sub mb-4">Distribution across all categories for today</div>
+          <div class="text-center font-bold mb-1" style="font-size:24px">1,245</div>
+          <div class="text-center text-xs text-muted mb-3">Total users</div>
+          <div class="chart-wrap mb-2"><canvas id="donutChart"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
+          <hr class="divider" />
+          <div class="font-semibold mb-2" style="font-size:13px">Application Status</div>
+          <div class="device-list">
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:var(--accent-dim, #22c55e)">send</span>APPLIED · Total applications</span><span class="font-semibold">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:#3b82f6">hourglass_top</span>IN REVIEW · Awaiting employer</span><span class="font-semibold">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:#f59e0b">event</span>INTERVIEWS · Scheduled</span><span class="font-semibold">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px">workspace_premium</span>OFFERS · Received</span><span class="font-semibold">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:#ef4444">cancel</span>REJECTIONS · Closed</span><span class="font-semibold">0</span></div>
+          </div>
+        </div>
+
+        <!-- Right column: Create Vacancy stacked over Calendar -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card flex flex-col">
+          <div class="section-title mb-1">Create Vacancy</div>
+          <div class="section-sub mb-5">Launch hiring workflow</div>
+          <ul class="vacancy-steps">
+            <li><span class="step-dot"></span>Define role &amp; team</li>
+            <li><span class="step-dot"></span>Set hiring details</li>
+            <li><span class="step-dot"></span>Add requirements &amp; benefits</li>
+            <li><span class="step-dot"></span>Publish to careers page</li>
+          </ul>
+          <button class="btn btn-primary btn-full mt-auto" id="go-create-vacancy">Start →</button>
+        </div>
+        <div class="card">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="section-title">Calendar</div>
+              <div class="section-sub">This week</div>
+            </div>
+            <div class="flex" style="gap:8px">
+              <button class="btn" id="cal-prev" type="button">‹</button>
+              <button class="btn" id="cal-next" type="button">›</button>
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:13px">
+            <div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div><div class="cal-dow">S</div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ ANALYTICS ══════ -->
+    <section class="page" id="page-analytics">
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <div class="page-title" style="font-size:22px">Analytics</div>
+          <div class="page-sub">Detailed device-specific energy analysis and insights</div>
+        </div>
+      </div>
+
+
+      <!-- Application Status (replaces Environmental Impact) -->
+      <div class="card mb-4 border-l-primary">
+        <div class="section-title mb-1">📨 Application Status</div>
+        <div class="section-sub mb-4">Live status across all roles you have posted</div>
+        <div class="grid-4" id="emp-status-grid"></div>
+      </div>
+
+      <!-- Trend Chart -->
+      <div class="card mb-4">
+        <div class="section-title mb-1">↗ Application & Hiring Activity Trends</div>
+        <div class="section-sub mb-4">Live applications, interviews and offers across all your posted roles</div>
+        <div class="tab-bar">
+          <button class="tab-btn active">↗ Applications</button>
+          <button class="tab-btn">▦ Interviews</button>
+          <button class="tab-btn">≋ Offers</button>
+        </div>
+        <div class="chart-wrap chart-wrap-tall"><canvas id="trendChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ══════ POST JOBS ══════ -->
+    <section class="page" id="page-post-jobs">
+      <form id="post-job-form" class="card mb-6">
+        <div class="section-header">
+          <div class="icon-primary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+          <div><div class="section-title">Add a new corporate job</div><div class="section-sub">Fill in the details below to publish a vacancy.</div></div>
+        </div>
+
+        <!-- Basic info -->
+        <div class="section-header mt-2">
+          <div class="section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <div><div class="section-title">Basic job information</div><div class="section-sub">Core details about the role</div></div>
+        </div>
+        <div class="form-grid mb-6">
+          <div><label class="field-label">Job title</label><input class="input" id="f-title" placeholder="e.g. Junior Software Developer" /><div class="field-hint">The official position name.</div></div>
+          <div><label class="field-label">Company name</label><input class="input" id="f-company" placeholder="e.g. AI Natives Pty Ltd" /><div class="field-hint">The organisation hiring for the role.</div></div>
+          <div><label class="field-label">Employment type</label><select class="input select-native" id="f-type"><option value="">Select job type</option><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Temporary</option></select><div class="field-hint">Choose the employment category first.</div></div>
+          <div><label class="field-label">Work mode</label><select class="input select-native" id="f-mode"><option value="">Select work mode</option><option>On-site</option><option>Remote</option><option>Hybrid</option></select><div class="field-hint">Where the employee will work from.</div></div>
+          <div><label class="field-label">Location</label><input class="input" id="f-location" placeholder="e.g. Johannesburg, Gauteng" /><div class="field-hint">City, province, country or remote.</div></div>
+          <div><label class="field-label">Department</label><input class="input" id="f-dept" placeholder="e.g. Engineering / HR / Finance" /><div class="field-hint">The business unit responsible for the role.</div></div>
+        </div>
+
+        <!-- Compensation -->
+        <div class="section-header">
+          <div class="section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div><div class="section-title">Compensation and working conditions</div><div class="section-sub">Pay, seniority and timelines</div></div>
+        </div>
+        <div class="form-grid mb-6">
+          <div><label class="field-label">Salary range</label><input class="input" id="f-salary" placeholder="e.g. R18 000 - R25 000 per month" /><div class="field-hint">Optional but useful for applicants.</div></div>
+          <div><label class="field-label">Experience level</label><select class="input select-native" id="f-exp"><option value="">Select experience level</option><option>Entry-level</option><option>Junior</option><option>Mid-level</option><option>Senior</option><option>Lead / Principal</option></select><div class="field-hint">Seniority expected for the role.</div></div>
+          <div><label class="field-label">Closing date</label><input class="input" type="date" id="f-date" /><div class="field-hint">Last day applicants can apply.</div></div>
+          <div><label class="field-label">HR contact email</label><input class="input" type="email" id="f-email" placeholder="e.g. careers@company.co.za" /><div class="field-hint">Contact person or recruitment inbox.</div></div>
+        </div>
+
+        <!-- Role details -->
+        <div class="section-header">
+          <div class="section-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div><div class="section-title">Role details</div><div class="section-sub">Describe the position in depth</div></div>
+        </div>
+        <div class="space-y mb-6">
+          <div><label class="field-label">Job description</label><textarea class="textarea" id="f-desc" rows="4" placeholder="Explain the purpose of the role, main duties..."></textarea><div class="field-hint">Explain the purpose of the role, main duties, daily responsibilities and reporting line.</div></div>
+          <div><label class="field-label">Requirements and qualifications</label><textarea class="textarea" id="f-reqs" rows="4" placeholder="List education, skills, experience..."></textarea><div class="field-hint">List education, skills, experience, certifications and minimum requirements.</div></div>
+          <div><label class="field-label">Benefits and accessibility support</label><textarea class="textarea" id="f-bens" rows="4" placeholder="Mention benefits, reasonable accommodation..."></textarea><div class="field-hint">Mention benefits, reasonable accommodation, assistive technology, accessible workplace support or transport support.</div></div>
+        </div>
+
+        <div class="flex gap-3" style="justify-content:flex-end;flex-wrap:wrap">
+          <button type="button" class="btn btn-outline" id="btn-clear-form">Clear</button>
+          <button type="button" class="btn btn-outline" id="btn-save-draft">💾 Save as Draft</button>
+          <button type="button" class="btn btn-outline" id="btn-preview-job">👁 Preview as User</button>
+          <button type="submit" class="btn btn-primary">Post Job</button>
+        </div>
+      </form>
+
+      <!-- Drafts -->
+      <div class="card mb-6" id="drafts-card" style="display:none">
+        <div class="section-title mb-1">📝 Saved Drafts</div>
+        <div class="section-sub mb-4">Continue editing later or delete drafts you no longer need.</div>
+        <div id="drafts-list-container"></div>
+      </div>
+
+      <!-- Your listings -->
+      <div class="card">
+        <div class="section-title mb-1">Your listings</div>
+        <div class="section-sub mb-4">Jobs posted by employer</div>
+        <div id="job-list-container"><p class="text-center text-muted py-8">No jobs posted yet.</p></div>
+      </div>
+    </section>
+
+    <!-- ══════ APPLICANTS ══════ -->
+    <section class="page" id="page-applicants">
+      <div class="mb-5">
+        <div class="page-title">Applicants</div>
+        <div class="page-sub">Applications from users</div>
+      </div>
+      <div class="card">
+        <div class="section-header">
+          <div class="icon-primary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div><div class="section-title">Review applicants</div><div class="section-sub">Filter, change status and add comments. Changes are saved automatically.</div></div>
+        </div>
+
+        <!-- Filters -->
+        <div class="applicant-filters">
+          <input class="input" id="appf-search" placeholder="🔍 Search by name, email or job..." style="flex:2;min-width:220px" />
+          <select class="input select-native" id="appf-status" style="flex:1;min-width:160px">
+            <option value="">All statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Reviewed">Reviewed</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          <select class="input select-native" id="appf-period" style="flex:1;min-width:160px">
+            <option value="">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+          <button class="btn btn-outline" id="appf-bulk-reviewed">✓ Mark all as Reviewed</button>
+          <button class="btn btn-outline" id="appf-bulk-rejected">✕ Send Rejection to all</button>
+          <button class="btn btn-outline" id="appf-clear">Clear filters</button>
+        </div>
+        <div class="applicant-filter-meta" id="appf-meta"></div>
+
+        <div class="table-wrap"><div id="applicants-table-container"></div></div>
+      </div>
+    </section>
+
+    <!-- ══════ REPORTS ══════ -->
+    <section class="page" id="page-reports">
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <div class="page-title">Reports</div>
+          <div class="page-sub">Build, preview and export your employer report</div>
+        </div>
+      </div>
+
+      <!-- Personalised Report Builder -->
+      <div class="card mb-5">
+        <div class="section-header">
+          <div class="icon-primary">📊</div>
+          <div><div class="section-title">Build your report</div><div class="section-sub">Pick what to include, choose your charts, then export.</div></div>
+        </div>
+
+        <div class="rep-builder">
+          <div class="rep-group">
+            <div class="rep-label">Sections to include</div>
+            <div class="rep-checks" id="emp-rep-sections">
+              <label><input type="checkbox" value="summary" checked> Summary KPIs</label>
+              <label><input type="checkbox" value="status"  checked> Application Status Breakdown</label>
+              <label><input type="checkbox" value="applicants" checked> Applicants table</label>
+              <label><input type="checkbox" value="jobs" checked> Posted Jobs table</label>
+              <label><input type="checkbox" value="comments"> Applicant Comments</label>
+            </div>
+            <button class="btn btn-outline btn-tiny" id="emp-rep-sections-all">Select all</button>
+          </div>
+
+          <div class="rep-group">
+            <div class="rep-label">Chart types</div>
+            <div class="rep-checks" id="emp-rep-charts">
+              <label><input type="checkbox" value="bar" checked> 📊 Bar</label>
+              <label><input type="checkbox" value="line"> 📈 Line</label>
+              <label><input type="checkbox" value="pie"> 🥧 Pie</label>
+              <label><input type="checkbox" value="donut"> 🍩 Donut</label>
+            </div>
+            <button class="btn btn-outline btn-tiny" id="emp-rep-charts-all">Use all charts</button>
+          </div>
+
+          <div class="rep-group">
+            <div class="rep-label">Date range</div>
+            <select class="input select-native" id="emp-rep-range" style="min-width:180px">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+
+          <div class="rep-group">
+            <div class="rep-label">Export format</div>
+            <div class="flex gap-2" style="flex-wrap:wrap">
+              <select class="input select-native" id="emp-rep-format" style="min-width:160px">
+                <option value="pdf">PDF</option>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+                <option value="all">All formats</option>
+              </select>
+              <button class="btn btn-primary" id="emp-rep-export">↓ Export Report</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="emp-rep-preview" class="rep-preview"></div>
+      </div>
+
+      <!-- Saved reports list -->
+      <div class="card mb-5">
+        <div class="section-header">
+          <div class="icon-primary">🗂</div>
+          <div style="flex:1"><div class="section-title">Saved Reports</div><div class="section-sub">All reports you have downloaded.</div></div>
+          <button class="btn btn-outline" onclick="clearAllEmpReports()">Clear all</button>
+        </div>
+        <div id="emp-saved-reports"></div>
+      </div>
+    </section>
+
+    <!-- ══════ SETTINGS ══════ -->
+    <section class="page" id="page-settings">
+      <div class="section-label mb-1">Personalise</div>
+      <div class="page-title" style="font-size:28px">Settings</div>
+      <div class="page-sub mb-6">Tailor the platform to how you want to interact, see, and hear.</div>
+
+      <div class="settings-layout">
+        <!-- Settings nav -->
+        <nav class="settings-nav">
+          <button class="settings-nav-btn active" data-panel="accessibility">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Accessibility
+          </button>
+          <button class="settings-nav-btn" data-panel="language">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Language &amp; AI
+          </button>
+          <button class="settings-nav-btn" data-panel="notifications">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications
+          </button>
+          <button class="settings-nav-btn" data-panel="privacy">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Privacy &amp; data
+          </button>
+          <button class="settings-nav-btn" data-panel="profile">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profile &amp; identity
+          </button>
+        </nav>
+
+        <!-- Settings panels -->
+        <div class="card flex-1">
+          <!-- Accessibility -->
+          <div class="settings-panel active" id="panel-accessibility">
+            <h2 class="font-bold mb-4" style="font-size:20px">Accessibility</h2>
+            <div class="setting-row"><div class="setting-icon">Aa</div><div class="setting-info"><div class="setting-title">Font size</div><div class="setting-desc">Make text easier to read across the platform.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>Small</option><option>Medium</option><option selected>Large</option><option>Extra Large</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">◑</div><div class="setting-info"><div class="setting-title">High contrast mode</div><div class="setting-desc">Use a strong contrast theme for visual clarity.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">🔊</div><div class="setting-info"><div class="setting-title">Speech speed</div><div class="setting-desc">Pace at which TTS reads content aloud.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>0.5x</option><option>0.75x</option><option selected>1.0x</option><option>1.25x</option><option>1.5x</option><option>2.0x</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">🎨</div><div class="setting-info"><div class="setting-title">Color filters</div><div class="setting-desc">Adjust colour for colour blindness or sensitivity.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option selected>None</option><option>Protanopia</option><option>Deuteranopia</option><option>Tritanopia</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">⊡</div><div class="setting-info"><div class="setting-title">Target size</div><div class="setting-desc">Increase the size of buttons and tap targets.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>Small</option><option selected>Standard</option><option>Large</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">✦</div><div class="setting-info"><div class="setting-title">Reduce animations</div><div class="setting-desc">Minimise motion across the platform.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">⌨</div><div class="setting-info"><div class="setting-title">Keyboard-only mode</div><div class="setting-desc">Navigate the entire platform without a mouse.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">◎</div><div class="setting-info"><div class="setting-title">Focus mode</div><div class="setting-desc">Hide non-essential elements to focus on one task.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">↓</div><div class="setting-info"><div class="setting-title">Auto-scroll speed</div><div class="setting-desc">Speed when content scrolls automatically.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>Slow</option><option selected>Medium</option><option>Fast</option></select></div></div>
+          </div>
+          <!-- Language -->
+          <div class="settings-panel" id="panel-language">
+            <h2 class="font-bold mb-4" style="font-size:20px">Language &amp; communication</h2>
+            <div class="setting-row"><div class="setting-icon">🌐</div><div class="setting-info"><div class="setting-title">Preferred language</div><div class="setting-desc">The display language across the platform.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option selected>English</option><option>Spanish</option><option>French</option><option>German</option><option>Hindi</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">Aa</div><div class="setting-info"><div class="setting-title">Text simplification</div><div class="setting-desc">Choose how complex text content is.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>Simple</option><option selected>Standard</option><option>Advanced</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">🌐</div><div class="setting-info"><div class="setting-title">Auto-translate</div><div class="setting-desc">Translate content into your preferred language.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">✦</div><div class="setting-info"><div class="setting-title">AI response length</div><div class="setting-desc">How verbose AI replies should be.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>Brief</option><option selected>Moderate</option><option>Detailed</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">🎙</div><div class="setting-info"><div class="setting-title">Voice activation word</div><div class="setting-desc">Custom wake word to start hands-free input.</div></div><div class="setting-control"><input class="input" style="width:140px" value="Hey Native" /></div></div>
+            <div class="setting-row"><div class="setting-icon">Aa</div><div class="setting-info"><div class="setting-title">Auto-punctuation</div><div class="setting-desc">Add punctuation automatically to voice input.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+          </div>
+          <!-- Notifications -->
+          <div class="settings-panel" id="panel-notifications">
+            <h2 class="font-bold mb-4" style="font-size:20px">Notifications</h2>
+            <div class="setting-row"><div class="setting-icon">🔔</div><div class="setting-info"><div class="setting-title">Notification method</div><div class="setting-desc">How you'd like to be notified.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option selected>Push</option><option>Email</option><option>SMS</option><option>None</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">🔔</div><div class="setting-info"><div class="setting-title">Quiet hours</div><div class="setting-desc">Pause notifications during this window.</div></div><div class="setting-control"><div class="time-inputs"><input type="time" value="22:00"><span class="text-muted" style="font-size:13px">to</span><input type="time" value="07:00"></div></div></div>
+            <div class="setting-row"><div class="setting-icon">🔔</div><div class="setting-info"><div class="setting-title">New job listings</div><div class="setting-desc">Be alerted when matching roles are posted.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">🔔</div><div class="setting-info"><div class="setting-title">Peer messages</div><div class="setting-desc">Notifications for incoming community messages.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">🔔</div><div class="setting-info"><div class="setting-title">Daily goal reminders</div><div class="setting-desc">Gentle nudges throughout the day.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+          </div>
+          <!-- Privacy -->
+          <div class="settings-panel" id="panel-privacy">
+            <h2 class="font-bold mb-4" style="font-size:20px">Privacy &amp; data</h2>
+            <div class="setting-row"><div class="setting-icon">🎙</div><div class="setting-info"><div class="setting-title">Save voice transcripts</div><div class="setting-desc">Store voice-to-text history on the platform.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+            <div class="setting-row"><div class="setting-icon">🛡</div><div class="setting-info"><div class="setting-title">Save communication history</div><div class="setting-desc">Keep a log of communication tool usage.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+          </div>
+          <!-- Profile -->
+          <div class="settings-panel" id="panel-profile">
+            <h2 class="font-bold mb-4" style="font-size:20px">Profile &amp; identity</h2>
+            <div class="setting-row"><div class="setting-icon"></div><div class="setting-info"><div class="setting-title">Pronouns</div><div class="setting-desc">Used across the platform in communications.</div></div><div class="setting-control"><input class="input" style="width:120px" value="he" /></div></div>
+            <div class="setting-row"><div class="setting-icon">👁</div><div class="setting-info"><div class="setting-title">Disability type &amp; needs</div><div class="setting-desc">Helps tailor jobs, resources, and the interface.</div></div><div class="setting-control"><select class="input select-native" style="width:auto"><option>None</option><option selected>Visual impairment</option><option>Hearing impairment</option><option>Motor disability</option><option>Cognitive disability</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon">🛡</div><div class="setting-info"><div class="setting-title">Public profile</div><div class="setting-desc">Master switch for profile visibility.</div></div><div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ CREATE VACANCY ══════ -->
+    <section class="page" id="page-create-vacancy">
+      <button class="back-link" id="btn-back-from-vacancy">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to dashboard
+      </button>
+      <div class="page-title">Create Vacancy</div>
+      <div class="page-sub">Launch hiring workflow</div>
+      <div class="vacancy-grid">
+        <div class="vacancy-step-card"><div class="font-semibold mb-1">1. Define role &amp; team</div><div class="text-xs text-muted">Job title, department, reporting line, location.</div></div>
+        <div class="vacancy-step-card"><div class="font-semibold mb-1">2. Set hiring details</div><div class="text-xs text-muted">Employment type, seniority, salary range, start date.</div></div>
+        <div class="vacancy-step-card"><div class="font-semibold mb-1">3. Add requirements &amp; benefits</div><div class="text-xs text-muted">Must-haves, nice-to-haves, perks, compensation package.</div></div>
+        <div class="vacancy-step-card"><div class="font-semibold mb-1">4. Publish to careers page</div><div class="text-xs text-muted">Preview and publish to your public careers page.</div></div>
+      </div>
+    </section>
+
+    </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="employer-app.js"></script>
+<script>
+(function(){
+  const grid = document.getElementById('calendar-grid');
+  if(!grid) return;
+  // Show ONLY the current week (Mon -> Sun) containing the reference today
+  const today = new Date();
+  let weekOffset = 0;
+  function render(){
+    grid.querySelectorAll('.cal-day').forEach(n=>n.remove());
+    const ref = new Date(today.getFullYear(), today.getMonth(), today.getDate() + weekOffset*7);
+    // find Monday of ref's week
+    const dow = (ref.getDay()+6)%7; // 0=Mon
+    const monday = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - dow);
+    for(let i=0;i<7;i++){
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+i);
+      const el = document.createElement('div');
+      const isToday = d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth() && d.getDate()===today.getDate();
+      el.className = 'cal-day' + (isToday ? ' today' : '');
+      el.textContent = d.getDate();
+      el.title = d.toDateString();
+      grid.appendChild(el);
+    }
+    const sub = document.querySelector('#page-dashboard .section-sub');
+    if(sub){
+      const sun = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+6);
+      sub.textContent = monday.toLocaleString('en',{month:'short',day:'numeric'}) + ' – ' + sun.toLocaleString('en',{month:'short',day:'numeric',year:'numeric'});
+    }
+  }
+  document.getElementById('cal-prev').addEventListener('click',()=>{weekOffset--;render();});
+  document.getElementById('cal-next').addEventListener('click',()=>{weekOffset++;render();});
+  render();
+})();
+</script>
+<div class="pdfm-overlay" id="pdfm-overlay">
+  <div class="pdfm-dialog">
+    <div class="pdfm-head">
+      <div class="pdfm-title"> Report Preview</div>
+      <div class="pdfm-actions">
+        <button class="pdfm-btn" onclick="closePdfPreview()">Cancel</button>
+        <button class="pdfm-btn primary" id="pdfm-export">↓ Export PDF</button>
+      </div>
+    </div>
+    <div class="pdfm-body"><div class="pdfm-page" id="pdfm-page"></div></div>
+  </div>
+</div>
+
+<!-- Job Preview Modal (user view) -->
+<div class="preview-overlay" id="preview-overlay" onclick="if(event.target===this)closeJobPreview()">
+  <div class="preview-modal" id="preview-modal"></div>
+</div>
+<script>
+/* Drag-to-reorder sidebar nav items (works across user/employer/admin) */
+(function(){
+  function init(){
+    var navs = document.querySelectorAll('aside.sidebar nav, aside.sidebar .sb-nav, aside.sidebar #main-nav');
+    navs.forEach(function(nav){
+      var items = nav.querySelectorAll('button');
+      items.forEach(function(btn){
+        btn.setAttribute('draggable','true');
+        btn.style.cursor = 'grab';
+        btn.addEventListener('dragstart', function(e){
+          btn.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          try{e.dataTransfer.setData('text/plain','x');}catch(_){}
+        });
+        btn.addEventListener('dragend', function(){ btn.classList.remove('dragging'); persist(nav); });
+      });
+      nav.addEventListener('dragover', function(e){
+        e.preventDefault();
+        var dragging = nav.querySelector('.dragging');
+        if(!dragging) return;
+        var after = getAfter(nav, e.clientY);
+        if(after == null) nav.appendChild(dragging);
+        else nav.insertBefore(dragging, after);
+      });
+    });
+    function getAfter(nav, y){
+      var els = [].slice.call(nav.querySelectorAll('button:not(.dragging)'));
+      return els.reduce(function(closest, child){
+        var box = child.getBoundingClientRect();
+        var offset = y - box.top - box.height/2;
+        if(offset < 0 && offset > closest.offset) return {offset:offset, element:child};
+        return closest;
+      }, {offset: -Infinity}).element || null;
+    }
+    function persist(nav){
+      try{
+        var ids = [].slice.call(nav.querySelectorAll('button')).map(function(b){ return b.getAttribute('data-page') || b.getAttribute('onclick') || b.textContent.trim(); });
+        localStorage.setItem('ainNavOrder:'+location.pathname, JSON.stringify(ids));
+      }catch(_){}
+    }
+    // restore order
+    navs.forEach(function(nav){
+      try{
+        var saved = JSON.parse(localStorage.getItem('ainNavOrder:'+location.pathname)||'null');
+        if(!saved) return;
+        var map = {};
+        [].slice.call(nav.querySelectorAll('button')).forEach(function(b){
+          map[b.getAttribute('data-page') || b.getAttribute('onclick') || b.textContent.trim()] = b;
+        });
+        saved.forEach(function(id){ if(map[id]) nav.appendChild(map[id]); });
+      }catch(_){}
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<style>
+aside.sidebar nav button.dragging, aside.sidebar .sb-nav button.dragging, aside.sidebar #main-nav button.dragging{opacity:.45;transform:scale(.98)}
+aside.sidebar nav button, aside.sidebar .sb-nav button, aside.sidebar #main-nav button{transition:transform .12s,opacity .12s}
+</style>
+
+<script src="db-frontend.js"></script>
+<script src="employer-sql.js"></script>
+<script src="logged-in-user.js"></script>
+<script src="/realtime-dashboard.js"></script>
+</body>
+</html>
