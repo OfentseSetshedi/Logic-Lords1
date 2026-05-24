@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Natives — Smart Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    .pdfm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+    .pdfm-overlay.open{display:flex}
+    .pdfm-dialog{background:#fff;width:min(900px,100%);max-height:92vh;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+    .pdfm-head{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e8eae7}
+    .pdfm-title{font-weight:700;font-size:16px}
+    .pdfm-actions{display:flex;gap:8px}
+    .pdfm-btn{padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;border:1px solid #d1d5db;background:#fff;font-size:13px}
+    .pdfm-btn.primary{background:#16a34a;color:#fff;border-color:#16a34a}
+    .pdfm-body{padding:24px;overflow:auto;background:#f6f7f5}
+    .pdfm-page{background:#fff;padding:32px;max-width:780px;margin:0 auto;font-family:'DM Sans',sans-serif;color:#1a1f18;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+    .pdfm-page h1{font-size:22px;margin:0 0 4px}
+    .pdfm-page h2{font-size:15px;margin:18px 0 8px;color:#16a34a;border-bottom:1px solid #eee;padding-bottom:4px}
+    .pdfm-meta{font-size:12px;color:#6b7280;margin-bottom:14px}
+    .pdfm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 14px}
+    .pdfm-tile{border:1px solid #eee;border-radius:8px;padding:8px}
+    .pdfm-tile-l{font-size:10px;color:#6b7280;text-transform:uppercase}
+    .pdfm-tile-v{font-size:18px;font-weight:700}
+    .pdfm-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+    .pdfm-table th,.pdfm-table td{border:1px solid #eee;padding:6px 8px;text-align:left}
+    .pdfm-table th{background:#f4f5f3;font-weight:700}
+    .pdfm-chart-wrap{height:240px;margin:8px 0 16px}
+    .status-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+    .sp-Applied{background:#dcfce7;color:#15803d}
+    .sp-Review{background:#dbeafe;color:#1d4ed8}
+    .sp-Interview{background:#fef3c7;color:#a16207}
+    .sp-Offer{background:#dcfce7;color:#166534}
+    .sp-Rejected{background:#fee2e2;color:#b91c1c}
+  </style>
+
+<script>
+(function() {
+  try {
+    var session = JSON.parse(localStorage.getItem('aiNativesLoggedIn') || 'null');
+    if (!session || session.role !== 'user') {
+      alert('Please register and login as User Dashboard first.');
+      window.location.href = 'index.html';
+    }
+  } catch(e) {
+    window.location.href = 'index.html';
+  }
+})();
+function aiNativesLogout() {
+  localStorage.removeItem('aiNativesLoggedIn');
+  window.location.href = 'index.html';
+}
+</script>
+
+
+
+<style id="sidebar-drag-css">
+/* Default collapsed (icons only). Drag the handle to the right to expand. */
+aside.sidebar{position:relative;transition:width .18s ease, padding .18s ease}
+body.sidebar-collapsed aside.sidebar{width:76px!important;padding:16px 8px!important}
+body.sidebar-collapsed .sidebar-name,body.sidebar-collapsed .sidebar-sub,body.sidebar-collapsed .nav-label,body.sidebar-collapsed .nav-sub,body.sidebar-collapsed .nav-dot,body.sidebar-collapsed .sb-title,body.sidebar-collapsed .sb-sub,body.sidebar-collapsed .sb-item-label,body.sidebar-collapsed .sb-item-sub,body.sidebar-collapsed .sb-dot,body.sidebar-collapsed .sb-user-name,body.sidebar-collapsed .sb-user-role,body.sidebar-collapsed .sidebar-user > div:not(.user-avatar){display:none!important}
+body.sidebar-collapsed .sidebar-logo,body.sidebar-collapsed .sb-brand{justify-content:center;text-align:center}
+body.sidebar-collapsed .nav-btn,body.sidebar-collapsed .sb-item{justify-content:center;padding:12px 0!important;gap:0!important}
+body.sidebar-collapsed .nav-btn > div,body.sidebar-collapsed .sb-item > div{display:none}
+body.sidebar-collapsed .sidebar-user,body.sidebar-collapsed .sb-footer{justify-content:center}
+/* Hide brand text + quick action labels when collapsed; shrink logo */
+body.sidebar-collapsed .app-name,body.sidebar-collapsed .app-sub,body.sidebar-collapsed .quick-title,body.sidebar-collapsed .quick-nav span:not(.material-icons){display:none!important}
+body.sidebar-collapsed .ai-logo-mark{width:36px!important;height:36px!important;border-radius:10px!important;box-shadow:none!important;margin:0 auto!important}
+body.sidebar-collapsed .ai-logo-text{font-size:14px!important;letter-spacing:-1px!important}
+body.sidebar-collapsed .ai-logo-star{font-size:9px!important;right:3px!important;top:2px!important}
+body.sidebar-collapsed .sidebar-logo.ai-brand{display:flex!important;flex-direction:column;align-items:center;grid-template-columns:none!important;padding:6px 0 14px!important}
+body.sidebar-collapsed .quick-actions-sidebar{padding:0!important}
+body.sidebar-collapsed .quick-nav{justify-content:center!important;padding:10px 0!important}
+.sb-drag-handle{position:absolute;top:0;right:-6px;width:12px;height:100%;cursor:ew-resize;z-index:50;display:flex;align-items:center;justify-content:center}
+.sb-drag-handle::before{content:"";width:4px;height:46px;border-radius:4px;background:#cbd5e1;opacity:.55;transition:opacity .15s,background .15s}
+.sb-drag-handle:hover::before{opacity:1;background:#22c55e}
+/* hide any old burger toggle button that earlier templates injected */
+.sb-collapse-toggle{display:none!important}
+/* Logout nav button styling */
+.nav-btn.logout-nav, .sb-item.logout-nav{color:#dc2626}
+.nav-btn.logout-nav svg, .sb-item.logout-nav svg{color:#dc2626}
+</style>
+<script>
+(function(){
+  function init(){
+    var sidebar = document.querySelector('aside.sidebar');
+    if(!sidebar) return;
+    // default = collapsed unless user previously expanded
+    if(localStorage.getItem('sidebarCollapsed') !== '0'){
+      document.body.classList.add('sidebar-collapsed');
+    }
+    // remove any pre-existing burger toggle
+    var oldBtn = sidebar.querySelector('.sb-collapse-toggle');
+    if(oldBtn) oldBtn.remove();
+    // add drag handle
+    var h = document.createElement('div');
+    h.className = 'sb-drag-handle';
+    h.title = 'Drag to expand / collapse';
+    sidebar.appendChild(h);
+    var startX = 0, startCollapsed = false, dragging = false;
+    h.addEventListener('mousedown', function(e){
+      dragging = true; startX = e.clientX;
+      startCollapsed = document.body.classList.contains('sidebar-collapsed');
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      var dx = e.clientX - startX;
+      if(startCollapsed && dx > 30){
+        document.body.classList.remove('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed','0');
+        startCollapsed = false; startX = e.clientX;
+      } else if(!startCollapsed && dx < -30){
+        document.body.classList.add('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed','1');
+        startCollapsed = true; startX = e.clientX;
+      }
+    });
+    window.addEventListener('mouseup', function(){ dragging = false; });
+    // also allow click on handle to toggle
+    h.addEventListener('click', function(){
+      var c = document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', c ? '1' : '0');
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+
+  <script src="auth-guard.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo ai-brand">
+      <div class="ai-logo-mark" aria-hidden="true">
+        <span class="ai-logo-text">AI</span>
+        <span class="ai-logo-star">✦</span>
+      </div>
+      <div class="app-name">AI Natives</div>
+      <div class="app-sub">Smart Intelligence</div>
+    </div>
+
+    <nav class="nav-items">
+      <button class="nav-btn active" data-page="dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        <div>
+          <div class="nav-label">Dashboard</div>
+          <div class="nav-sub">Overview &amp; monitoring</div>
+        </div>
+        <span class="nav-dot"></span>
+      </button>
+
+      <button class="nav-btn" data-page="jobs">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="7" width="18" height="13" rx="2"/>
+          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <line x1="3" y1="13" x2="21" y2="13"/>
+        </svg>
+        <div>
+          <div class="nav-label">Jobs</div>
+          <div class="nav-sub">Inclusive job matching</div>
+        </div>
+        <span class="nav-dot"></span>
+      </button>
+
+      <button class="nav-btn" data-page="voice">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="17" x2="12" y2="22"/>
+        </svg>
+        <div>
+          <div class="nav-label">Voice &amp; Translate</div>
+          <div class="nav-sub">Speech to text + translation</div>
+        </div>
+        <span class="nav-dot"></span>
+      </button>
+
+      <button class="nav-btn" data-page="navigation">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+        <div>
+          <div class="nav-label">Navigation</div>
+          <div class="nav-sub">Accessible routes</div>
+        </div>
+        <span class="nav-dot"></span>
+      </button>
+
+      <button class="nav-btn" data-page="reports">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <div><div class="nav-label">Reports</div><div class="nav-sub">Analytics &amp; insights</div></div>
+        <span class="nav-dot"></span>
+      </button>
+<button class="nav-btn" data-page="settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <div><div class="nav-label">Settings &amp; Profile</div></div>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-btn logout-nav" onclick="aiNativesLogout()" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <div><div class="nav-label">Log out</div></div>
+      </button>
+    </nav>
+
+    <div class="quick-actions-sidebar">
+      <div class="quick-title">Quick Actions</div>
+      <button class="quick-nav" type="button" onclick="goToPage('voice'); setTimeout(()=>document.getElementById('mic-btn')?.click(),250)">
+        <span class="material-icons">radio_button_checked</span><span>Start Recording</span>
+      </button>
+      <button class="quick-nav" type="button" onclick="goToPage('voice'); setTimeout(()=>document.getElementById('speak-btn')?.click(),250)">
+        <span class="material-icons">volume_up</span><span>Read Aloud</span>
+      </button>
+      <button class="quick-nav" type="button" onclick="goToPage('voice'); setTimeout(()=>document.getElementById('translate-btn')?.click(),250)">
+        <span class="material-icons">translate</span><span>Translate</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ─── Main Content ─── -->
+  <main class="main">
+    <header class="topbar">
+      <div class="top-search">
+        <span class="material-icons">search</span>
+        <input id="global-search" type="search" placeholder="Search anything..." />
+        <kbd>Ctrl + K</kbd>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" type="button" aria-label="Notifications"><span class="material-icons">notifications</span><span class="notif-badge">3</span></button>
+        <button class="icon-btn" type="button" aria-label="Theme" onclick="document.body.classList.toggle('dark-mode')"><span class="material-icons">dark_mode</span></button>
+        <div class="top-profile" onclick="goToPage('settings')">
+          <div class="user-avatar top-avatar">LG</div>
+          <div><div class="user-name">Liam Gallagher</div></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══════════════ DASHBOARD ══════════════ -->
+    <section class="page active" id="page-dashboard">
+      <div class="dash-header polished-header">
+        <div>
+          <div class="dash-title">Dashboard</div>
+          <div class="dash-sub">Welcome back, Liam! Here&apos;s what&apos;s happening with your system.</div>
+        </div>
+        <button class="date-pill" type="button"><span class="material-icons">calendar_today</span> May 13, 2026 <span class="material-icons">expand_more</span></button>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-row dashboard-kpis">
+        <div class="kpi-card premium-kpi">
+          <div class="kpi-icon green"><span class="material-icons">monitor_heart</span></div>
+          <div><div class="kpi-value">128</div><div class="kpi-name">Active Jobs</div><div class="kpi-growth">↑ 12% from last week</div></div>
+        </div>
+        <div class="kpi-card premium-kpi">
+          <div class="kpi-icon blue"><span class="material-icons">groups</span></div>
+          <div><div class="kpi-value">256</div><div class="kpi-name">Applications</div><div class="kpi-growth">↑ 8% from last week</div></div>
+        </div>
+        <div class="kpi-card premium-kpi">
+          <div class="kpi-icon purple"><span class="material-icons">business_center</span></div>
+          <div><div class="kpi-value">42</div><div class="kpi-name">Interviews</div><div class="kpi-growth">↑ 15% from last week</div></div>
+        </div>
+        <div class="kpi-card premium-kpi">
+          <div class="kpi-icon amber"><span class="material-icons">trending_up</span></div>
+          <div><div class="kpi-value">89%</div><div class="kpi-name">Match Score</div><div class="kpi-growth">↑ 7% from last week</div></div>
+        </div>
+      </div>
+
+      <!-- Side-by-side: Jobs Matching + Sites & quick access -->
+      <div class="dash-side-grid">
+        <!-- Jobs Matching Your Profile -->
+        <div class="card">
+          <div class="section-title">Jobs Matching Your Profile</div>
+          <div class="section-sub">Total jobs matching your profile, broken down by application status</div>
+          <div class="donut-total" id="donut-total-val">0</div>
+          <div class="donut-total-sub">Total matching jobs</div>
+          <div class="chart-wrap" style="max-width:300px;margin:0 auto"><canvas id="donutChart" role="img" aria-label="Donut chart showing job application status"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
+          <div class="device-status">
+            <div class="device-status-title">Application status</div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:var(--accent-dim)">send</span>APPLIED</span><span class="device-kwh" id="ds-applied">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:#3b82f6">hourglass_top</span>IN REVIEW</span><span class="device-kwh" id="ds-review">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:#f59e0b">event</span>INTERVIEWS</span><span class="device-kwh" id="ds-interviews">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:var(--accent-dim)">workspace_premium</span>OFFERS</span><span class="device-kwh" id="ds-offers">0</span></div>
+            <div class="device-row"><span class="device-name"><span class="material-icons" style="font-size:16px;color:var(--danger,#ef4444)">cancel</span>REJECTIONS</span><span class="device-kwh" id="ds-rejections">0</span></div>
+          </div>
+        </div>
+
+        <!-- Sites & quick access -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <div class="section-title">Sites &amp; quick access</div>
+              <div class="section-sub">Your saved locations — click to fly to it on the map</div>
+            </div>
+            <button class="btn-accent" data-goto="navigation" style="padding:8px 12px;font-size:12px">
+              <span class="material-icons" style="font-size:16px;vertical-align:-3px">explore</span>
+              Open Navigation
+            </button>
+          </div>
+
+          <div id="sites-map" class="sites-map-box" style="display:none;height:260px;border-radius:12px;overflow:hidden;margin:12px 0;border:1px solid #e5e7eb"></div>
+          <ul class="site-list" id="site-list"></ul>
+          <div id="site-empty" class="jobs-empty" style="padding:16px 8px" hidden>
+            <span class="material-icons" style="font-size:32px;color:var(--text-muted)">location_off</span>
+            <p>No saved locations yet. Add one below.</p>
+          </div>
+
+          <form id="site-form" class="site-form">
+            <input id="site-name-input" class="field-input" placeholder="Location name (e.g. Home)" required />
+            <div class="site-form-row">
+              <input id="site-lat-input" class="field-input" placeholder="Latitude" type="number" step="any" required />
+              <input id="site-lng-input" class="field-input" placeholder="Longitude" type="number" step="any" required />
+            </div>
+            <button type="submit" class="btn-outline btn-block" style="margin-top:8px">
+              <span class="material-icons" style="font-size:16px;vertical-align:-3px">add_location</span>
+              Save location
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Quick Access shortcuts (bottom) -->
+      <div class="card" style="margin-top:18px">
+        <div class="section-title">Quick Access</div>
+        <div class="section-sub">Jump to the tools you use most</div>
+        <div class="quick-grid">
+          <button class="quick-tile" data-goto="jobs">
+            <span class="material-icons quick-icon">work</span>
+            <div class="quick-title">Inclusive Jobs</div>
+            <div class="quick-sub">CV matcher &amp; live roles</div>
+          </button>
+          <button class="quick-tile" data-goto="voice">
+            <span class="material-icons quick-icon">record_voice_over</span>
+            <div class="quick-title">Voice &amp; Translation</div>
+            <div class="quick-sub">Speech to text + translate</div>
+          </button>
+          <button class="quick-tile" data-goto="reports">
+            <span class="material-icons quick-icon">insights</span>
+            <div class="quick-title">Reports</div>
+            <div class="quick-sub">Activity &amp; downloads</div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ JOBS ══════════════ -->
+    <section class="page" id="page-jobs">
+      <div class="analytics-header">
+        <div>
+          <div class="analytics-title">Inclusive Jobs</div>
+          <div class="analytics-sub">Upload your CV here and AI Natives will match you to real jobs posted by employers. No demo jobs are shown.</div>
+        </div>
+        <span class="live-pill"><span class="live-dot"></span> Live from employers</span>
+      </div>
+
+      <!-- Application stats -->
+      <div class="kpi-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">APPLIED</span><span class="material-icons" style="font-size:16px;color:var(--accent-dim)">send</span></div>
+          <div class="kpi-value" id="stat-applied">0</div>
+          <div class="kpi-bottom"><span class="kpi-sub">Total applications</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">IN REVIEW</span><span class="material-icons" style="font-size:16px;color:#3b82f6">hourglass_top</span></div>
+          <div class="kpi-value" id="stat-review">0</div>
+          <div class="kpi-bottom"><span class="kpi-sub">Awaiting employer</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">INTERVIEWS</span><span class="material-icons" style="font-size:16px;color:#f59e0b">event</span></div>
+          <div class="kpi-value" id="stat-interviews">0</div>
+          <div class="kpi-bottom"><span class="kpi-sub">Scheduled</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">OFFERS</span><span class="material-icons" style="font-size:16px;color:var(--accent-dim)">workspace_premium</span></div>
+          <div class="kpi-value" id="stat-offers">0</div>
+          <div class="kpi-bottom"><span class="kpi-sub">Received</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">REJECTIONS</span><span class="material-icons" style="font-size:16px;color:var(--danger)">cancel</span></div>
+          <div class="kpi-value" id="stat-rejections">0</div>
+          <div class="kpi-bottom"><span class="kpi-sub">Closed roles</span></div>
+        </div>
+      </div>
+
+      <div class="jobs-grid">
+        <!-- CV Matcher -->
+        <div class="card">
+          <div class="section-title" style="display:flex;align-items:center;gap:8px">
+            <span class="material-icons" style="color:var(--accent-dim);font-size:20px">description</span>
+            CV Job Matcher
+          </div>
+          <div class="section-sub">Upload CV once — applications will reuse it</div>
+
+          <form id="cv-form" class="cv-form">
+            <label class="cv-drop" for="cv-file" id="cv-drop">
+              <span class="material-icons" style="font-size:36px;color:var(--accent-dim)">cloud_upload</span>
+              <div class="cv-drop-title">CV file</div>
+              <div class="cv-drop-sub" id="cv-drop-sub">Drag &amp; drop or click to choose (PDF, DOC, DOCX)</div>
+              <input id="cv-file" type="file" accept=".pdf,.doc,.docx,.txt" hidden />
+            </label>
+            <button type="submit" class="btn-accent btn-block">
+              <span class="material-icons" style="font-size:16px;vertical-align:-3px">auto_awesome</span>
+              Save CV
+            </button>
+            <div id="cv-saved-info" class="section-sub" style="margin-top:8px"></div>
+          </form>
+        </div>
+
+        <!-- Available employer-posted jobs (expandable + apply) -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="section-title">Available Jobs</div>
+              <div class="section-sub">Click a job to expand and view the full posting</div>
+            </div>
+            <span class="live-badge"><span class="live-badge-dot"></span> Live</span>
+          </div>
+          <div class="uj-filter" role="tablist" aria-label="Job source filter" style="display:inline-flex;gap:6px;margin-top:14px;background:var(--surface-2,#f3f4f6);padding:4px;border-radius:10px">
+            <button type="button" class="uj-filter-btn active" data-source="site" role="tab" aria-selected="true">Posted on this site</button>
+            <button type="button" class="uj-filter-btn" data-source="external" role="tab" aria-selected="false">Search jobs online</button>
+          </div>
+          <div id="uj-search-row" hidden style="display:flex;gap:8px;margin-top:12px">
+            <input id="uj-search-input" class="field-input" placeholder="Search e.g. 'developer', 'remote support', 'designer'" style="flex:1" />
+            <button id="uj-search-btn" class="btn-accent" type="button">Search</button>
+          </div>
+          <div id="uj-filters-row" hidden style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px">
+            <div>
+              <label class="field-label" style="margin-top:0">Province <span style="color:#15803d">*</span></label>
+              <select id="uj-province" class="field-select">
+                <option value="">Select province…</option>
+                <option>Eastern Cape</option>
+                <option>Free State</option>
+                <option>Gauteng</option>
+                <option>KwaZulu-Natal</option>
+                <option>Limpopo</option>
+                <option>Mpumalanga</option>
+                <option>Northern Cape</option>
+                <option>North West</option>
+                <option>Western Cape</option>
+                <option>Remote / Anywhere</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0">Job title <span style="color:#15803d">*</span></label>
+              <input id="uj-jobtitle" class="field-input" placeholder="e.g. Frontend Developer" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0">City <span style="color:#9ca3af;font-weight:500">(optional)</span></label>
+              <input id="uj-city" class="field-input" placeholder="e.g. Cape Town" />
+            </div>
+            <div>
+              <label class="field-label" style="margin-top:0">Seniority <span style="color:#9ca3af;font-weight:500">(optional)</span></label>
+              <select id="uj-seniority" class="field-select">
+                <option value="">Any</option>
+                <option>Internship</option>
+                <option>Junior</option>
+                <option>Mid-level</option>
+                <option>Senior</option>
+                <option>Lead / Principal</option>
+              </select>
+            </div>
+          </div>
+          <div id="user-jobs-list" class="uj-list" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ VOICE & TRANSLATION ══════════════ -->
+    <section class="page" id="page-voice">
+      <div class="analytics-header">
+        <div>
+          <div class="analytics-title">Voice-to-Text &amp; Translation</div>
+          <div class="analytics-sub">Speak in any language and get instant transcription and translation</div>
+        </div>
+      </div>
+
+      <div class="voice-grid">
+        <div class="card voice-card">
+          <div class="section-title" style="display:flex;align-items:center;gap:8px">
+            <span class="material-icons" style="color:var(--accent-dim);font-size:20px">mic</span>
+            Voice Input
+          </div>
+          <div class="section-sub">Tap the mic and start speaking</div>
+
+          <div class="mic-wrap">
+            <button id="mic-btn" class="mic-btn" aria-label="Start recording">
+              <span class="material-icons" style="font-size:42px">mic</span>
+            </button>
+            <div class="mic-status" id="mic-status">Idle</div>
+          </div>
+
+          <label class="field-label">Source language</label>
+          <select id="src-lang" class="field-select">
+            <option value="en-US">English (US)</option>
+            <option value="es-ES">Spanish</option>
+            <option value="fr-FR">French</option>
+            <option value="de-DE">German</option>
+            <option value="hi-IN">Hindi</option>
+            <option value="ar-SA">Arabic</option>
+            <option value="zh-CN">Chinese (Mandarin)</option>
+          </select>
+
+          <label class="field-label">Transcript</label>
+          <textarea id="transcript" class="field-area" rows="5" placeholder="Your spoken words will appear here..."></textarea>
+        </div>
+
+        <div class="card voice-card">
+          <div class="section-title" style="display:flex;align-items:center;gap:8px">
+            <span class="material-icons" style="color:var(--accent-dim);font-size:20px">translate</span>
+            Translation
+          </div>
+          <div class="section-sub">Choose a target language</div>
+
+          <label class="field-label">Target language</label>
+          <select id="tgt-lang" class="field-select">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="hi">Hindi</option>
+            <option value="ar">Arabic</option>
+            <option value="zh">Chinese</option>
+          </select>
+
+          <button id="translate-btn" class="btn-accent btn-block" style="margin-top:12px">
+            <span class="material-icons" style="font-size:16px;vertical-align:-3px">g_translate</span>
+            Translate
+          </button>
+
+          <label class="field-label">Translated text</label>
+          <textarea id="translation" class="field-area" rows="5" placeholder="Translation will appear here..."></textarea>
+
+          <button id="speak-btn" class="btn-outline btn-block" style="margin-top:8px">
+            <span class="material-icons" style="font-size:16px;vertical-align:-3px">volume_up</span>
+            Speak translation
+          </button>
+        </div>
+      </div>
+
+      <!-- Text-to-Speech: type any text and have it read aloud -->
+      <div class="card" style="margin-top:14px">
+        <div class="section-title" style="display:flex;align-items:center;gap:8px">
+          <span class="material-icons" style="color:var(--accent-dim);font-size:20px">record_voice_over</span>
+          Text-to-Speech
+        </div>
+        <div class="section-sub">Type or paste any text and have it read out loud</div>
+
+        <label class="field-label">Text to read aloud</label>
+        <textarea id="tts-input" class="field-area" rows="4" placeholder="Type something here…"></textarea>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end;margin-top:10px">
+          <div>
+            <label class="field-label" style="margin-top:0">Voice language</label>
+            <select id="tts-lang" class="field-select">
+              <option value="en-US">English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="es-ES">Spanish</option>
+              <option value="fr-FR">French</option>
+              <option value="de-DE">German</option>
+              <option value="hi-IN">Hindi</option>
+              <option value="ar-SA">Arabic</option>
+              <option value="zh-CN">Chinese</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0">Speed</label>
+            <input id="tts-rate" type="range" min="0.5" max="1.6" step="0.1" value="1" style="width:100%" />
+          </div>
+          <button id="tts-speak" class="btn-accent" style="height:40px">
+            <span class="material-icons" style="font-size:16px;vertical-align:-3px">volume_up</span> Read aloud
+          </button>
+          <button id="tts-stop" class="btn-outline" style="height:40px">
+            <span class="material-icons" style="font-size:16px;vertical-align:-3px">stop</span> Stop
+          </button>
+        </div>
+      </div>
+
+      <!-- Previous conversations -->
+      <div class="card" style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="display:flex;align-items:center;gap:8px">
+              <span class="material-icons" style="color:var(--accent-dim);font-size:20px">history</span>
+              Previous conversations
+            </div>
+            <div class="section-sub">Saved transcripts and translations from this device</div>
+          </div>
+          <button id="convo-clear" class="btn-outline" style="padding:6px 10px;font-size:12px">
+            <span class="material-icons" style="font-size:14px;vertical-align:-3px">delete_sweep</span>
+            Clear
+          </button>
+        </div>
+        <div id="convo-empty" class="jobs-empty" style="padding:24px 12px">
+          <span class="material-icons" style="font-size:36px;color:var(--text-muted)">forum</span>
+          <p>No previous conversations yet. Translate something to save it here.</p>
+        </div>
+        <ul id="convo-list" class="convo-list" hidden></ul>
+      </div>
+    </section>
+
+    <!-- ══════════════ NAVIGATION ══════════════ -->
+    <section class="page" id="page-navigation">
+      <div class="analytics-header">
+        <div>
+          <div class="analytics-title">Navigation</div>
+          <div class="analytics-sub">AI-powered routes optimized for physical accessibility and cognitive ease.</div>
+        </div>
+      </div>
+
+      <div class="nav-grid">
+        <div class="card">
+          <div class="section-title">Plan a route</div>
+          <div class="section-sub">Pick start, destination, and accessibility needs</div>
+
+          <label class="field-label">From</label>
+          <input id="route-from" class="field-input" placeholder="Current location" />
+
+          <label class="field-label">To</label>
+          <input id="route-to" class="field-input" placeholder="Destination" />
+
+          <label class="field-label">Accessibility preferences</label>
+          <div class="chip-row">
+            <label class="chip"><input type="checkbox" checked> Step-free</label>
+            <label class="chip"><input type="checkbox"> Wide paths</label>
+            <label class="chip"><input type="checkbox"> Low sensory load</label>
+            <label class="chip"><input type="checkbox"> Rest stops every 200m</label>
+            <label class="chip"><input type="checkbox"> Clear signage</label>
+          </div>
+
+          <button class="btn-accent btn-block" id="route-btn" style="margin-top:14px">
+            <span class="material-icons" style="font-size:16px;vertical-align:-3px">directions</span>
+            Find accessible route
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Suggested route</div>
+          <div class="section-sub">Optimized for selected preferences</div>
+
+          <div id="nav-map" class="map-box"></div>
+
+          <div class="turn-by-turn" id="turn-by-turn" style="margin-top:14px;border:1px solid var(--border,#e8eae7);border-radius:14px;padding:18px;background:#fff">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;font-weight:700">
+              <span>Step <span id="tbt-current">1</span> of <span id="tbt-total">5</span></span>
+              <span id="tbt-eta" style="color:#16a34a">On the way</span>
+            </div>
+            <div id="tbt-step" style="display:flex;gap:14px;align-items:center;margin:14px 0">
+              <span class="material-icons" id="tbt-icon" style="font-size:44px;color:#16a34a;background:#f0fdf4;border-radius:14px;padding:10px;box-shadow:0 4px 12px rgba(34,197,94,.18)">place</span>
+              <div style="flex:1">
+                <div id="tbt-instruction" style="font-size:17px;font-weight:800;line-height:1.3">Start — Main entrance (step-free)</div>
+                <div id="tbt-distance" style="font-size:13px;color:#6b7280;margin-top:4px">Tap "I'm here" when you reach this point</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" id="tbt-next" class="btn-accent" style="flex:1;min-width:140px;padding:12px 16px">
+                <span class="material-icons" style="font-size:16px;vertical-align:-3px">check_circle</span> I'm here — next step
+              </button>
+              <button type="button" id="tbt-restart" class="btn-outline" style="padding:12px 16px">↺ Restart</button>
+            </div>
+            <ol id="tbt-overview" style="margin-top:14px;font-size:12px;color:#9ca3af;list-style:none;padding:0;display:none"></ol>
+          </div>
+          <script>
+          (function(){
+            var steps = [
+              {icon:'place',     text:'Start — Main entrance (step-free)',         dist:'You are here'},
+              {icon:'straight',  text:'Continue 120m straight on smooth pavement', dist:'Walk 120m forward'},
+              {icon:'elevator',  text:'Turn here and take elevator B to level 2',  dist:'Elevator is on your right'},
+              {icon:'chair',     text:'Quiet rest area on your left — pause if needed', dist:'Optional rest stop'},
+              {icon:'flag',      text:'Arrive at destination',                     dist:'You have arrived'}
+            ];
+            var i = 0;
+            function render(){
+              var s = steps[i];
+              document.getElementById('tbt-icon').textContent = s.icon;
+              document.getElementById('tbt-instruction').textContent = s.text;
+              document.getElementById('tbt-distance').textContent = s.dist;
+              document.getElementById('tbt-current').textContent = i+1;
+              document.getElementById('tbt-total').textContent = steps.length;
+              var btn = document.getElementById('tbt-next');
+              if(i >= steps.length-1){
+                btn.innerHTML = '<span class="material-icons" style="font-size:16px;vertical-align:-3px">flag</span> Arrived';
+                document.getElementById('tbt-eta').textContent = 'Arrived';
+              } else {
+                btn.innerHTML = '<span class="material-icons" style="font-size:16px;vertical-align:-3px">check_circle</span> I\'m here — next step';
+                document.getElementById('tbt-eta').textContent = 'On the way';
+              }
+            }
+            function ready(fn){ if(document.readyState!=='loading'){fn();} else {document.addEventListener('DOMContentLoaded',fn);} }
+            ready(function(){
+              render();
+              document.getElementById('tbt-next').addEventListener('click', function(){
+                if(i < steps.length-1){ i++; render(); }
+              });
+              document.getElementById('tbt-restart').addEventListener('click', function(){ i=0; render(); });
+            });
+          })();
+          </script>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ REPORTS ══════════════ -->
+    <section class="page" id="page-reports">
+      <div class="reports-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="analytics-title">Reports</div>
+          <div class="analytics-sub">Click <strong>Save &amp; Download</strong> to generate your personal report.</div>
+        </div>
+        <button class="btn-accent" id="btn-generate-report" style="padding:10px 18px">↓ Save &amp; Download</button>
+      </div>
+
+      <!-- Saved reports list (always visible) -->
+      <div class="card" style="margin-top:18px;margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <div class="section-title" style="display:flex;align-items:center;gap:8px">🗂 Saved Reports</div>
+            <div class="section-sub" style="margin-bottom:0">Reports you have generated. Use Delete to remove.</div>
+          </div>
+          <button class="btn-outline" onclick="clearAllUserReports()">Clear all</button>
+        </div>
+        <div id="user-saved-reports"></div>
+      </div>
+
+      <!-- Generated report container (HIDDEN until user clicks Save & Download) -->
+      <div id="report-content" hidden>
+        <!-- Activity summary -->
+        <div class="card" style="margin-bottom:18px">
+          <div style="margin-bottom:14px">
+            <div class="section-title" style="display:flex;align-items:center;gap:8px"><span style="color:var(--accent-dim)">📋</span> My Activity Summary</div>
+            <div class="section-sub" style="margin-bottom:0">Everything important across your account</div>
+          </div>
+          <div id="user-summary-grid" class="kpi-row" style="grid-template-columns:repeat(4,1fr)"></div>
+        </div>
+
+        <!-- Personalised Report Builder -->
+        <div class="card" style="margin-bottom:18px">
+          <div style="margin-bottom:14px">
+            <div class="section-title" style="display:flex;align-items:center;gap:8px"><span style="color:var(--accent-dim)">📊</span> My Personal Report</div>
+            <div class="section-sub" style="margin-bottom:0">Pick what to include, choose your charts, then export.</div>
+          </div>
+
+          <div class="rep-builder">
+            <div class="rep-group">
+              <div class="rep-label">Sections to include</div>
+              <div class="rep-checks" id="rep-sections">
+                <label><input type="checkbox" value="summary" checked> Personal Summary</label>
+                <label><input type="checkbox" value="status"  checked> Application Status</label>
+                <label><input type="checkbox" value="success" checked> Success Rate</label>
+                <label><input type="checkbox" value="feedback"> Employer Feedback</label>
+                <label><input type="checkbox" value="skills"> Skill Insights</label>
+                <label><input type="checkbox" value="recs"> Recommendations</label>
+              </div>
+              <button class="btn-outline btn-tiny" id="rep-sections-all">Select all</button>
+            </div>
+            <div class="rep-group">
+              <div class="rep-label">Chart types</div>
+              <div class="rep-checks" id="rep-charts">
+                <label><input type="checkbox" value="bar"  checked> 📊 Bar</label>
+                <label><input type="checkbox" value="line" checked> 📈 Line</label>
+                <label><input type="checkbox" value="pie"> 🥧 Pie</label>
+                <label><input type="checkbox" value="donut"> 🍩 Donut</label>
+              </div>
+              <button class="btn-outline btn-tiny" id="rep-charts-all">Use all charts</button>
+            </div>
+            <div class="rep-group">
+              <div class="rep-label">Date range</div>
+              <select class="input" id="rep-range" style="min-width:180px">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="all">All time</option>
+              </select>
+            </div>
+            <div class="rep-group">
+              <div class="rep-label">Export format</div>
+              <select class="input" id="rep-format" style="min-width:160px">
+                <option value="pdf">PDF</option>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+                <option value="all">All formats</option>
+              </select>
+              <button class="btn-accent" id="rep-export">↓ Export Report</button>
+            </div>
+          </div>
+          <div id="rep-preview" class="rep-preview"></div>
+        </div>
+
+        <!-- Employer-posted Jobs & My Application Status -->
+        <div class="card" style="margin-bottom:18px">
+          <div style="margin-bottom:14px">
+            <div class="section-title" style="display:flex;align-items:center;gap:8px"><span style="color:var(--accent-dim)"></span> Employer-posted Jobs &amp; My Application Status</div>
+            <div class="section-sub" style="margin-bottom:0">Roles posted by employers — track where each application stands</div>
+          </div>
+          <div id="user-employer-jobs"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ SETTINGS ══════════════ -->
+    <section class="page" id="page-settings">
+      <style>
+        .settings-layout { display: flex; flex-direction: column; gap: 16px; }
+        .settings-nav { width: 100%; display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; background: #fff; padding: 8px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+        .settings-tab { display: inline-flex; align-items: center; gap: 8px; border: none; background: none; font-family: inherit; color: var(--fg, #1a1f18); font-size: 13px; cursor: pointer; border-radius: 8px; padding: 8px 14px; transition: background .12s; white-space: nowrap; }
+        .settings-tab:hover { background: var(--muted-bg, #f0f2ef); }
+        .settings-tab.active { background: #ffffff; color: #16a34a; font-weight: 700; box-shadow: inset 0 0 0 1px #d1fae5; }
+        .settings-tab.active svg, .settings-tab.active .material-icons { color: #16a34a; background: #ffffff; }
+        .settings-tab svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .settings-panel { flex: 1; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+        .settings-body { display: none; }
+        .settings-body.active { display: block; }
+        .setting-row { display: flex; align-items: center; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border, #e8eae7); }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--muted-bg, #f0f2ef); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .setting-icon svg { width: 18px; height: 18px; color: var(--muted, #6b7280); }
+        .setting-info { flex: 1; }
+        .setting-title { font-size: 14px; font-weight: 600; }
+        .setting-desc  { font-size: 12px; color: var(--muted, #6b7280); margin-top: 2px; }
+        .setting-ctrl  { flex-shrink: 0; }
+        .toggle { position: relative; width: 44px; height: 24px; border: none; border-radius: 9999px; background: var(--muted-bg, #f0f2ef); cursor: pointer; transition: background .2s; padding: 0; }
+        .toggle.on { background: var(--accent, #16a34a); }
+        .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+        .toggle.on::after { transform: translateX(20px); }
+        .ctrl-select { border: 1px solid var(--border, #e8eae7); border-radius: 10px; background: #fff; padding: 7px 12px; font-size: 13px; color: inherit; cursor: pointer; }
+        .ctrl-input { border: 1px solid var(--border, #e8eae7); border-radius: 10px; background: #fff; padding: 7px 12px; font-size: 13px; color: inherit; width: 160px; }
+      </style>
+
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary, #d14a10)">Personalise</div>
+      <div style="font-size:30px;font-weight:800;margin-top:4px">Settings</div>
+      <div style="font-size:13px;color:var(--muted, #6b7280);margin-top:4px;margin-bottom:24px">Tailor the platform to how you want to interact, see, and hear.</div>
+
+      <div class="settings-layout">
+        <nav class="settings-nav">
+          <button class="settings-tab active" onclick="showSettingsTab('accessibility', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Accessibility
+          </button>
+          <button class="settings-tab" onclick="showSettingsTab('language', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+            Language &amp; AI
+          </button>
+          <button class="settings-tab" onclick="showSettingsTab('notifications', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Notifications
+          </button>
+          <button class="settings-tab" onclick="showSettingsTab('privacy', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Privacy &amp; data
+          </button>
+          <button class="settings-tab" onclick="showSettingsTab('profile', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile &amp; identity
+          </button>
+        </nav>
+
+        <div class="settings-panel">
+          <div id="stab-accessibility" class="settings-body active">
+            <div style="font-size:20px;font-weight:800;margin-bottom:16px">Accessibility</div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div><div class="setting-info"><div class="setting-title">Font size</div><div class="setting-desc">Make text easier to read across the platform.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>Small</option><option>Medium</option><option selected>Large</option><option>Extra Large</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg></div><div class="setting-info"><div class="setting-title">High contrast mode</div><div class="setting-desc">Use a strong contrast theme for visual clarity.</div></div><div class="setting-ctrl"><button class="toggle" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg></div><div class="setting-info"><div class="setting-title">Speech speed</div><div class="setting-desc">Pace at which TTS reads content aloud.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>0.5x</option><option>0.75x</option><option selected>1.0x</option><option>1.25x</option><option>1.5x</option><option>2.0x</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div><div class="setting-info"><div class="setting-title">Color filters</div><div class="setting-desc">Adjust colour for colour blindness or sensitivity.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option selected>None</option><option>Protanopia</option><option>Deuteranopia</option><option>Tritanopia</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg></div><div class="setting-info"><div class="setting-title">Target size</div><div class="setting-desc">Increase the size of buttons and tap targets.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>Small</option><option selected>Standard</option><option>Large</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6.364 6.364 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></div><div class="setting-info"><div class="setting-title">Reduce animations</div><div class="setting-desc">Minimise motion across the platform.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/></svg></div><div class="setting-info"><div class="setting-title">Keyboard-only mode</div><div class="setting-desc">Navigate the entire platform without a mouse.</div></div><div class="setting-ctrl"><button class="toggle" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div><div class="setting-info"><div class="setting-title">Focus mode</div><div class="setting-desc">Hide non-essential elements to focus on one task.</div></div><div class="setting-ctrl"><button class="toggle" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></div><div class="setting-info"><div class="setting-title">Auto-scroll speed</div><div class="setting-desc">Speed when content scrolls automatically.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>Slow</option><option selected>Medium</option><option>Fast</option></select></div></div>
+          </div>
+
+          <div id="stab-language" class="settings-body">
+            <div style="font-size:20px;font-weight:800;margin-bottom:16px">Language &amp; communication</div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"/></svg></div><div class="setting-info"><div class="setting-title">Preferred language</div><div class="setting-desc">The display language across the platform.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option selected>English</option><option>Spanish</option><option>French</option><option>German</option><option>Hindi</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/></svg></div><div class="setting-info"><div class="setting-title">Text simplification</div><div class="setting-desc">Choose how complex text content is.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>Simple</option><option selected>Standard</option><option>Advanced</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"/></svg></div><div class="setting-info"><div class="setting-title">Auto-translate</div><div class="setting-desc">Translate content into your preferred language.</div></div><div class="setting-ctrl"><button class="toggle" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></div><div class="setting-info"><div class="setting-title">AI response length</div><div class="setting-desc">How verbose AI replies should be.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>Brief</option><option selected>Moderate</option><option>Detailed</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/></svg></div><div class="setting-info"><div class="setting-title">Voice activation word</div><div class="setting-desc">Custom wake word to start hands-free input.</div></div><div class="setting-ctrl"><input class="ctrl-input" type="text" value="Hey Native" /></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/></svg></div><div class="setting-info"><div class="setting-title">Auto-punctuation</div><div class="setting-desc">Add punctuation automatically to voice input.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+          </div>
+
+          <div id="stab-notifications" class="settings-body">
+            <div style="font-size:20px;font-weight:800;margin-bottom:16px">Notifications</div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div><div class="setting-info"><div class="setting-title">Notification method</div><div class="setting-desc">How you'd like to be notified.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option selected>Push</option><option>Email</option><option>SMS</option><option>None</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="setting-info"><div class="setting-title">Quiet hours</div><div class="setting-desc">Pause notifications during this window.</div></div><div class="setting-ctrl" style="display:flex;align-items:center;gap:8px"><input type="time" class="ctrl-select" value="22:00" /><span style="font-size:12px;color:var(--muted, #6b7280)">to</span><input type="time" class="ctrl-select" value="07:00" /></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div><div class="setting-info"><div class="setting-title">New job listings</div><div class="setting-desc">Be alerted when matching roles are posted.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div><div class="setting-info"><div class="setting-title">Peer messages</div><div class="setting-desc">Notifications for incoming community messages.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div><div class="setting-info"><div class="setting-title">Daily goal reminders</div><div class="setting-desc">Gentle nudges throughout the day.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+          </div>
+
+          <div id="stab-privacy" class="settings-body">
+            <div style="font-size:20px;font-weight:800;margin-bottom:16px">Privacy &amp; data</div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/></svg></div><div class="setting-info"><div class="setting-title">Save voice transcripts</div><div class="setting-desc">Store voice-to-text history on the platform.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="setting-info"><div class="setting-title">Save communication history</div><div class="setting-desc">Keep a log of communication tool usage.</div></div><div class="setting-ctrl"><button class="toggle" onclick="this.classList.toggle('on')"></button></div></div>
+          </div>
+
+          <div id="stab-profile" class="settings-body">
+            <div style="font-size:20px;font-weight:800;margin-bottom:16px">Profile &amp; identity</div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="setting-info"><div class="setting-title">Display name</div><div class="setting-desc">Shown on the dashboard greeting and sidebar profile.</div></div><div class="setting-ctrl"><input class="ctrl-input" type="text" value="Liam Gallagher" /></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div><div class="setting-info"><div class="setting-title">Role title</div><div class="setting-desc">Shown below your name in the sidebar.</div></div><div class="setting-ctrl"><input class="ctrl-input" type="text" value="System Administrator" /></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></div><div class="setting-info"><div class="setting-title">Email address</div><div class="setting-desc">Used for account and notification details.</div></div><div class="setting-ctrl"><input class="ctrl-input" type="email" value="liam@example.com" /></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="setting-info"><div class="setting-title">Pronouns</div><div class="setting-desc">Used across the platform in communications.</div></div><div class="setting-ctrl"><input class="ctrl-input" type="text" value="he" /></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="setting-info"><div class="setting-title">Disability type &amp; needs</div><div class="setting-desc">Helps tailor jobs, resources, and the interface.</div></div><div class="setting-ctrl"><select class="ctrl-select"><option>None</option><option selected>Visual impairment</option><option>Hearing impairment</option><option>Motor disability</option><option>Cognitive disability</option></select></div></div>
+            <div class="setting-row"><div class="setting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="setting-info"><div class="setting-title">Public profile</div><div class="setting-desc">Master switch for profile visibility.</div></div><div class="setting-ctrl"><button class="toggle on" onclick="this.classList.toggle('on')"></button></div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <script>
+        function showSettingsTab(id, btn) {
+          document.querySelectorAll('#page-settings .settings-body').forEach(p => p.classList.remove('active'));
+          document.querySelectorAll('#page-settings .settings-tab').forEach(b => b.classList.remove('active'));
+          document.getElementById('stab-' + id).classList.add('active');
+          btn.classList.add('active');
+        }
+      </script>
+    </section>
+
+    <!-- Logout at end of main -->
+    </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+<style>
+  /* Truly fixed topbar */
+  .topbar{position:fixed!important;top:0;left:292px;right:0;z-index:50}
+  .main > .page{padding-top:110px!important}
+  @media (max-width:1100px){.topbar{left:260px}}
+  @media (max-width:760px){.topbar{position:sticky!important;left:0}.main > .page{padding-top:22px!important}}
+  /* Linear nav alignment in sidebar */
+  .nav-items .nav-btn{display:grid;grid-template-columns:32px 1fr 8px;align-items:center;text-align:left;width:100%}
+  .nav-items .nav-btn > .material-icons,.nav-items .nav-btn > svg{justify-self:center}
+  /* Sites & quick access inline map shows only when sites exist */
+  #sites-map.is-visible{display:block!important}
+</style>
+<script>
+  // Inline Leaflet map inside Sites & quick access card
+  (function(){
+    var sitesMap=null, sitesMarkers=[];
+    function initSitesMap(){
+      var el=document.getElementById('sites-map');
+      if(!el || typeof L==='undefined') return;
+      if(!sitesMap){
+        sitesMap=L.map('sites-map',{zoomControl:true}).setView([51.5074,-0.1278],12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(sitesMap);
+      }
+      setTimeout(function(){ sitesMap.invalidateSize(); },120);
+      return sitesMap;
+    }
+    function refreshSitesMap(){
+      var el=document.getElementById('sites-map');
+      if(!el) return;
+      var sites=[];
+      try{ sites=JSON.parse(localStorage.getItem('ainSites')||'[]'); }catch(e){}
+      if(!sites.length){ el.classList.remove('is-visible'); el.style.display='none'; return; }
+      el.style.display='block'; el.classList.add('is-visible');
+      var map=initSitesMap();
+      if(!map) return;
+      sitesMarkers.forEach(function(m){ map.removeLayer(m); });
+      sitesMarkers=[];
+      var bounds=[];
+      sites.forEach(function(s){
+        var m=L.marker([s.lat,s.lng]).addTo(map).bindPopup(s.name);
+        sitesMarkers.push(m); bounds.push([s.lat,s.lng]);
+      });
+      if(bounds.length===1) map.setView(bounds[0],14);
+      else if(bounds.length>1) map.fitBounds(bounds,{padding:[30,30]});
+    }
+    // Hook after renderSites / clicks / form submit
+    window.addEventListener('load',function(){
+      refreshSitesMap();
+      var ul=document.getElementById('site-list');
+      if(ul){ new MutationObserver(refreshSitesMap).observe(ul,{childList:true,subtree:true}); }
+    });
+    document.addEventListener('click',function(e){
+      var li=e.target.closest('#site-list li');
+      if(li && sitesMap){
+        var lat=parseFloat(li.dataset.lat), lng=parseFloat(li.dataset.lng);
+        if(!isNaN(lat)&&!isNaN(lng)) sitesMap.flyTo([lat,lng],15);
+      }
+    });
+  })();
+</script>
+<script src="settings-manager.js"></script>
+<script src="voice-widget.js"></script>
+<!-- PDF Preview Modal -->
+<div class="pdfm-overlay" id="pdfm-overlay">
+  <div class="pdfm-dialog">
+    <div class="pdfm-head">
+      <div class="pdfm-title"> Report Preview</div>
+      <div class="pdfm-actions">
+        <button class="pdfm-btn" onclick="closePdfPreview()">Cancel</button>
+        <button class="pdfm-btn primary" id="pdfm-export">↓ Export PDF</button>
+      </div>
+    </div>
+    <div class="pdfm-body"><div class="pdfm-page" id="pdfm-page"></div></div>
+  </div>
+</div>
+<script>
+/* Drag-to-reorder sidebar nav items (works across user/employer/admin) */
+(function(){
+  function init(){
+    var navs = document.querySelectorAll('aside.sidebar nav, aside.sidebar .sb-nav, aside.sidebar #main-nav');
+    navs.forEach(function(nav){
+      var items = nav.querySelectorAll('button');
+      items.forEach(function(btn){
+        btn.setAttribute('draggable','true');
+        btn.style.cursor = 'grab';
+        btn.addEventListener('dragstart', function(e){
+          btn.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          try{e.dataTransfer.setData('text/plain','x');}catch(_){}
+        });
+        btn.addEventListener('dragend', function(){ btn.classList.remove('dragging'); persist(nav); });
+      });
+      nav.addEventListener('dragover', function(e){
+        e.preventDefault();
+        var dragging = nav.querySelector('.dragging');
+        if(!dragging) return;
+        var after = getAfter(nav, e.clientY);
+        if(after == null) nav.appendChild(dragging);
+        else nav.insertBefore(dragging, after);
+      });
+    });
+    function getAfter(nav, y){
+      var els = [].slice.call(nav.querySelectorAll('button:not(.dragging)'));
+      return els.reduce(function(closest, child){
+        var box = child.getBoundingClientRect();
+        var offset = y - box.top - box.height/2;
+        if(offset < 0 && offset > closest.offset) return {offset:offset, element:child};
+        return closest;
+      }, {offset: -Infinity}).element || null;
+    }
+    function persist(nav){
+      try{
+        var ids = [].slice.call(nav.querySelectorAll('button')).map(function(b){ return b.getAttribute('data-page') || b.getAttribute('onclick') || b.textContent.trim(); });
+        localStorage.setItem('ainNavOrder:'+location.pathname, JSON.stringify(ids));
+      }catch(_){}
+    }
+    // restore order
+    navs.forEach(function(nav){
+      try{
+        var saved = JSON.parse(localStorage.getItem('ainNavOrder:'+location.pathname)||'null');
+        if(!saved) return;
+        var map = {};
+        [].slice.call(nav.querySelectorAll('button')).forEach(function(b){
+          map[b.getAttribute('data-page') || b.getAttribute('onclick') || b.textContent.trim()] = b;
+        });
+        saved.forEach(function(id){ if(map[id]) nav.appendChild(map[id]); });
+      }catch(_){}
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<style>
+aside.sidebar nav button.dragging, aside.sidebar .sb-nav button.dragging, aside.sidebar #main-nav button.dragging{opacity:.45;transform:scale(.98)}
+aside.sidebar nav button, aside.sidebar .sb-nav button, aside.sidebar #main-nav button{transition:transform .12s,opacity .12s}
+</style>
+
+<script src="db-frontend.js"></script>
+<script src="user-sql-jobs.js"></script>
+<script src="logged-in-user.js"></script>
+<script src="storage-ui.js"></script>
+<script src="/realtime-dashboard.js"></script>
+</body>
+</html>
